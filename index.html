@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>オンライン人狼ゲーム</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    #game {
+      display: none;
+    }
+    .hidden {
+      display: none;
+    }
+    .player {
+      margin: 10px 0;
+    }
+    .role {
+      font-weight: bold;
+    }
+    #status {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>オンライン人狼ゲーム</h1>
+  
+  <div id="startScreen">
+    <label for="name">名前を入力:</label>
+    <input type="text" id="name" placeholder="名前">
+    <button onclick="startGame()">ゲームを開始</button>
+  </div>
+  
+  <div id="game">
+    <h2>ゲーム中</h2>
+    <div id="playersList">
+      <h3>参加者:</h3>
+      <ul id="playerList"></ul>
+    </div>
+
+    <div id="actions">
+      <div id="role" class="hidden">
+        <p><span id="roleName"></span>です。</p>
+        <button onclick="nextPhase()">次のフェーズへ</button>
+      </div>
+      <div id="vote" class="hidden">
+        <h3>投票:</h3>
+        <ul id="voteList"></ul>
+        <button onclick="startVoting()">投票を開始</button>
+      </div>
+    </div>
+    
+    <div id="status">
+      <p id="gameStatus"></p>
+    </div>
+  </div>
+
+  <script>
+    const roles = ['市民', '人狼', '占い師', '霊媒師'];
+    let players = [];
+    let currentPlayerIndex = 0;
+    let phase = 'start'; // start, night, day
+    
+    // ゲームの開始
+    function startGame() {
+      const name = document.getElementById('name').value;
+      if (name === '') {
+        alert('名前を入力してください');
+        return;
+      }
+
+      // プレイヤーのリストに追加
+      players.push({ name: name, role: null });
+      document.getElementById('startScreen').style.display = 'none';
+      document.getElementById('game').style.display = 'block';
+      
+      // 役職をランダムに配布
+      assignRoles();
+      updatePlayerList();
+      
+      // 役職を表示
+      showRole();
+    }
+    
+    // 役職をランダムに配布
+    function assignRoles() {
+      const shuffledRoles = [...roles];
+      for (let i = 0; i < players.length; i++) {
+        players[i].role = shuffledRoles[i % shuffledRoles.length];
+      }
+    }
+
+    // プレイヤーリストを更新
+    function updatePlayerList() {
+      const playerListElement = document.getElementById('playerList');
+      playerListElement.innerHTML = '';
+      players.forEach(player => {
+        const li = document.createElement('li');
+        li.textContent = `${player.name} (${player.role})`;
+        playerListElement.appendChild(li);
+      });
+    }
+
+    // プレイヤーの役職を表示
+    function showRole() {
+      const player = players[currentPlayerIndex];
+      document.getElementById('roleName').textContent = player.role;
+      document.getElementById('role').classList.remove('hidden');
+      phase = 'night';
+    }
+
+    // 次のフェーズに進む
+    function nextPhase() {
+      currentPlayerIndex++;
+      if (currentPlayerIndex >= players.length) {
+        currentPlayerIndex = 0;
+        phase = 'day';
+        startVoting();
+      }
+
+      if (phase === 'night') {
+        // 夜のアクション処理
+        document.getElementById('role').classList.add('hidden');
+        showRole();
+      } else if (phase === 'day') {
+        // 昼の投票処理
+        document.getElementById('gameStatus').textContent = '昼です。投票を開始してください。';
+        document.getElementById('vote').classList.remove('hidden');
+      }
+    }
+
+    // 投票を開始
+    function startVoting() {
+      const voteListElement = document.getElementById('voteList');
+      voteListElement.innerHTML = '';
+      players.forEach((player, index) => {
+        const li = document.createElement('li');
+        li.textContent = `${player.name}`;
+        const voteButton = document.createElement('button');
+        voteButton.textContent = '投票';
+        voteButton.onclick = () => voteForPlayer(index);
+        li.appendChild(voteButton);
+        voteListElement.appendChild(li);
+      });
+    }
+
+    // 投票する
+    function voteForPlayer(index) {
+      players[index].voted = true;
+      alert(`${players[index].name} に投票しました！`);
+      checkVotes();
+    }
+
+    // 投票確認
+    function checkVotes() {
+      const allVoted = players.every(player => player.voted);
+      if (allVoted) {
+        document.getElementById('gameStatus').textContent = '投票が完了しました。';
+      }
+    }
+  </script>
+</body>
+</html>
